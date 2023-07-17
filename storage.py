@@ -11,8 +11,9 @@ class LRUCache:
     """
     An in-memory LRU cache.
 
-    The LRU Cache uses a doubly linked queue to keep track of the most recently used
-    items.
+    The cache uses an OrderedDict to keep track of the order of items - the
+    standard 'dict' type does not guarantee that order is preserved, and the
+    OrderedDict type provides methods for moving items to the front/back.
     """
 
     def __init__(self, capacity: int):
@@ -64,8 +65,9 @@ class LRUCache:
         return b
 
 
-class Storage():
+class Storage:
     """JSON File storage class that is backed by an LRU Cache."""
+
     def __init__(self, filename: str, cache_size: int):
         self.filename = filename
         self.cache = LRUCache(cache_size)
@@ -88,7 +90,6 @@ class Storage():
             f.seek(0)
             json.dump(data, f)
 
-
     def get(self, key: Any) -> Any:
         """
         Get a value from storage using it's key.
@@ -106,7 +107,7 @@ class Storage():
                     return data[key]
 
         return None
-    
+
     def __str__(self) -> str:
         """
         Return the string representation of the storage & cache.
