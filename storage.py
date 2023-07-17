@@ -2,6 +2,7 @@
 Implement a data storage class that is backed by an in-memory LRU cache.
 """
 
+import json
 from typing import Any
 from collections import OrderedDict
 
@@ -10,7 +11,7 @@ class LRUCache:
     """
     An in-memory LRU cache.
 
-    The LRU Cache uses a doubly linked queue to keep track of the most recently used 
+    The LRU Cache uses a doubly linked queue to keep track of the most recently used
     items.
     """
 
@@ -38,7 +39,7 @@ class LRUCache:
         )  # move the item to the beginning (end) of the OrderedDict
         if len(self.cache) > self.capacity:
             return self.cache.popitem(last=False)
-        
+
     def get(self, key: Any) -> Any:
         """
         Get a value from the cache.
@@ -48,11 +49,11 @@ class LRUCache:
         """
         if key not in self.cache:
             return None
-        
+
         # in this case, we're using the end as the "front" of the queue
-        self.cache.move_to_end(key=key) 
+        self.cache.move_to_end(key=key)
         return self.cache[key]
-    
+
     def __str__(self) -> str:
         """
         Return a string representation of the cache, for debugging purposes
@@ -63,25 +64,76 @@ class LRUCache:
         return b
 
 
+class Storage():
+    """JSON File storage class that is backed by an LRU Cache."""
+    def __init__(self, filename: str, cache_size: int):
+        self.filename = filename
+        self.cache = LRUCache(cache_size)
+
+    def insert(self, key: Any, value: Any):
+        """
+        Insert a key/value pairing into storage.
+
+        :param key: The key to insert.
+        :param value: The value to insert.
+        """
+        self.cache.insert(key, value)
+        with open(self.filename, "r+") as f:
+            content = f.read()
+            try:
+                data = json.loads(content)
+            except json.JSONDecodeError:
+                data = {}
+            data[key] = value
+            f.seek(0)
+            json.dump(data, f)
+
+
+    def get(self, key: Any) -> Any:
+        """
+        Get a value from storage using it's key.
+
+        :param key: The key to look up with.
+        :return: The value of the key, or None if the key does not exist.
+        """
+        if self.cache.get(key):
+            return self.cache.get(key)
+
+        with open(self.filename, "r") as f:
+            for line in f:
+                data = json.loads(line)
+                if key in data:
+                    return data[key]
+
+        return None
+    
+    def __str__(self) -> str:
+        """
+        Return the string representation of the storage & cache.
+        """
+        with open(self.filename, "r") as f:
+            return f"Storage: {json.loads(f.read())}\nCache: {self.cache}"
+
+
 def main():
-    cache = LRUCache(3)
-    cache.insert("a", 1)
-    cache.insert("b", 2)
-    cache.insert("c", 3)
+    storage = Storage("storage.json", 3)
+    storage.insert("a", 1)
+    storage.insert("b", 2)
+    storage.insert("c", 3)
     print("Cache after initial insertion:")
-    print(cache)
+    print(storage)
 
-    cache.get("b")
+    storage.get("b")
     print("Cache after get(b):")
-    print(cache)
+    print(storage)
 
-    cache.insert("d", 4)
+    storage.insert("d", 4)
     print("Cache after insert(d):")
-    print(cache)
+    print(storage)
 
-    cache.get("c")
+    storage.get("c")
     print("Cache after get(c):")
-    print(cache)
+    print(storage)
 
 
 if __name__ == "__main__":
