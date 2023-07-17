@@ -3,32 +3,26 @@ Implement a data storage class that is backed by an in-memory LRU cache.
 """
 
 from typing import Any
-
-
-class Node:
-    """Node object for implementation in a doubly linked list."""
-
-    def __init__(self, prev: "Node", next: "Node", key: Any, value: Any):
-        self.prev = prev
-        self.next = next
-        self.key = key
-        self.value = value
-        self.references = 1
+from collections import OrderedDict
 
 
 class LRUCache:
     """
     An in-memory LRU cache.
 
-    The LRU Cache uses a doubly linked queue to keep track of the most recently used items.
+    The LRU Cache uses a doubly linked queue to keep track of the most recently used 
+    items.
     """
 
     def __init__(self, capacity: int):
         """Construct an LRU Cache."""
-        self.head = None
-        self.tail = None  # the tail will be the LRU item
         self.capacity = capacity
-        self.size = 0
+        self.cache = OrderedDict()
+        """
+        Use an ordered dict, because as in the Python docs it's stated:
+        "The OrderedDict algorithm can handle frequent reordering operations 
+        better than dict."
+        """
 
     def insert(self, key: Any, value: Any) -> Any:
         """
@@ -37,70 +31,36 @@ class LRUCache:
         If the capacity of the cache is reached, evict the least recently used item.
 
         :return: The value of the item that was evicted, if any.
-
         """
-        if self.head is None:
-            # This value will be the new head & tail
-            self.head = Node(None, None, key, value)
-            self.tail = self.head
-            self.size += 1
+        self.cache[key] = value  # the OrderedDict will guarantee order is preserved
+        self.cache.move_to_end(
+            key=key
+        )  # move the item to the beginning (end) of the OrderedDict
+        if len(self.cache) > self.capacity:
+            return self.cache.popitem(last=False)
+        
+    def get(self, key: Any) -> Any:
+        """
+        Get a value from the cache.
+
+        :param key: The key to retrieve the value of.
+        :returns: The value of the key, or None if the key does not exist.
+        """
+        if key not in self.cache:
             return None
-
-        evicted = None
-        if self.size + 1 > self.capacity:
-            # Evict the tail node
-            tmp = self.tail
-            self.tail = tmp.prev
-            tmp.prev.next = self.tail
-            self.tail.next = None
-            self.size -= 1
-            evicted = tmp.value 
-
-        # insert new node at the head of the linked list
-        new_head = Node(None, self.head, key, value)
-        self.head.prev = new_head
-        self.head = new_head
-        self.size += 1
-        return evicted
-
-    def get(self, key):
+        
+        # in this case, we're using the end as the "front" of the queue
+        self.cache.move_to_end(key=key) 
+        return self.cache[key]
+    
+    def __str__(self) -> str:
         """
-        Retrieve a value from storage.
-
-        When a key is referenced, it will be moved to the front of the cache's
-        backing linked list.
-
-        :param key: The key of the item to retrieve.
+        Return a string representation of the cache, for debugging purposes
         """
-        # search cache
-        node = self.head
-        # special case: head of the list is our hit
-        if node.key == key:
-            return node.value
-
-        while node.next is not None:
-            node = node.next
-            if node.key == key:
-                # cache hit - move to front of list
-                node.prev.next = node.next
-                if node.next:
-                    node.next.prev = node.prev
-                node.prev = None
-                node.next = self.head
-                self.head.prev = node
-                self.head = node
-                return node.value
-
-    def __str__(self):
-        """Returns a string representation of the cache, for debugging purposes."""
-        node = self.head
-        buffer = ""
-        while node is not None:
-            buffer += f"({node.key}, {node.value})"
-            node = node.next
-            if node is not None:
-                buffer += " -> "
-        return buffer
+        b = ""
+        for key, value in self.cache.items().__reversed__():
+            b += f"\t({key}: {value})\n"
+        return b
 
 
 def main():
