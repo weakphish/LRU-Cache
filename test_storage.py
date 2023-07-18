@@ -1,4 +1,4 @@
-from .storage import LRUCache
+from storage import LRUCache
 
 def test_LRU():
     """
@@ -13,7 +13,7 @@ def test_LRU():
 
     assert cache.get("b") == 2
     # assert that the cache has been updated to our expected order
-    assert str(cache) == "\t(b: 2)\n\t(c: 3)\n\t(a: 1)\n"
+    assert str(cache) == "(b: 2) (c: 3) (a: 1) "
 
     assert cache.insert("d", 4) == ('a', 1) # should evict 'a'
-    assert str(cache) == "\t(d: 4)\n\t(b: 2)\n\t(c: 3)\n"
+    assert str(cache) == "(d: 4) (b: 2) (c: 3) "

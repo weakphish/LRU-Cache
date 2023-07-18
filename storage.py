@@ -36,10 +36,11 @@ class LRUCache:
         """
         self.cache[key] = value  # the OrderedDict will guarantee order is preserved
         self.cache.move_to_end(
-            key=key
-        )  # move the item to the beginning (end) of the OrderedDict
+            key=key,
+            last=False
+        )  # move the item to the beginning of the OrderedDict
         if len(self.cache) > self.capacity:
-            return self.cache.popitem(last=False)
+            return self.cache.popitem(last=True)
 
     def get(self, key: Any) -> Any:
         """
@@ -51,8 +52,7 @@ class LRUCache:
         if key not in self.cache:
             return None
 
-        # in this case, we're using the end as the "front" of the queue
-        self.cache.move_to_end(key=key)
+        self.cache.move_to_end(key=key, last=False)
         return self.cache[key]
 
     def __str__(self) -> str:
@@ -60,8 +60,8 @@ class LRUCache:
         Return a string representation of the cache, for debugging purposes
         """
         b = ""
-        for key, value in self.cache.items().__reversed__():
-            b += f"\t({key}: {value})\n"
+        for key, value in self.cache.items():
+            b += f"({key}: {value}) "
         return b
 
 
@@ -113,7 +113,7 @@ class Storage:
         Return the string representation of the storage & cache.
         """
         with open(self.filename, "r") as f:
-            return f"Storage: {json.loads(f.read())}\nCache: {self.cache}"
+            return f"Storage: {json.loads(f.read())}\nCache: {self.cache}\n"
 
 
 def main():
@@ -121,7 +121,7 @@ def main():
     storage.insert("a", 1)
     storage.insert("b", 2)
     storage.insert("c", 3)
-    print("Cache after initial insertion:")
+    print("Cache after initial insertion (a, b, c):")
     print(storage)
 
     storage.get("b")
